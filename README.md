@@ -1,2 +1,2 @@
-# PreConfiguratorForTraefikOnServiceFabric
-Extensions for Traefik on Service Fabric for Windows
+# Pre-Configurator For Traefik On Service Fabric
+Allows per environment configuration of Traefik on Service Fabric
