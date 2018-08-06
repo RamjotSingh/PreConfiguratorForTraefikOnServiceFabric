@@ -131,7 +131,7 @@ The parameters are as follows
 *Note the certificates MUST be uploaded to keyvault using the Certificates option and not Secrets*
 - **TraefikKeyVaultUri** - Only required if you want to use KeyVault. This should be the KeyVault Uri. Start with https://
 - **TraefikKeyVaultClientId** - Only required if using KeyVault. An Application must be associated with KeyVault to access it. Refer [this](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-use-from-web-application#authenticate-with-a-certificate-instead-of-a-client-secret) to setup
-- **TraefikKeyVaultClientSecret** or **TraefikKeyVaultClientCert** - Only required if using KeyVault. Depending on what option you used to step above you need to specify the client secret or certificate thumbprint for the application certificate. If the certificate is used, it must be installed on the machine. TraefikKeyVaultClientCert is the preferred option as it ensures no secrets are used in the configuration files.
+- **TraefikKeyVaultClientSecret** or **TraefikKeyVaultClientCert** - Only required if using KeyVault. Depending on what option you used in the keyvault application setup, you need to specify the client secret or certificate thumbprint for the application certificate. If the certificate is used, it must be installed on the machine. TraefikKeyVaultClientCert is the preferred option as it ensures no secrets are present in the configuration files.
 
 Deploy the Traefik service fabric application and pre-configurator should configure the Traefik instance before running.
 
