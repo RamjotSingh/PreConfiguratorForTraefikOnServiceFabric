@@ -136,6 +136,26 @@ The parameters are as follows
 Deploy the Traefik service fabric application and pre-configurator should configure the Traefik instance before running.
 
 ## Appendix - Using HTTPS on Traefik
-The above allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/Code/traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
+The above process allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/Code/traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
 However you need to also change the ServiceManifest to allow binding to port 443. Refer to the [sample manifest file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml) and Endpoints section on how to do the same. You can optionally enable port 80 as well if needed.
+```
+defaultEntryPoints = ["https"]
+insecureSkipVerify = true
 
+# Entrypoints definition
+#
+# Optional
+# Default:
+[entryPoints]
+#[entryPoints.http]
+#address = ":80"
+[entryPoints.traefik]
+address = ":8080"
+# Enable Https. Refer to https://docs.traefik.io/configuration/entrypoints/#tls for examples
+[entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      certFile = "certs/sslcert.crt"
+      keyFile = "certs/sslcert.key"
+```
