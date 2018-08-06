@@ -93,4 +93,7 @@
     <Content Include="OpenSSL\ssleay32.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /I /Y $(MSBuildThisFileDirectory)OpenSSL $(MSBuildThisFileDirectory)bin\$(Configuration)</PostBuildEvent>
+  </PropertyGroup>
 </Project>
