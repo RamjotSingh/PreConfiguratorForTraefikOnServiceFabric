@@ -44,7 +44,7 @@ To do this
 This requires the pre-configurator project to be present in same solution
 
 ##### Setup pre-configurator to run before the Traefik
-This can be setup in the Traefik service manifest. Refer to [Sample Service Manifest](\Samples\Traefik\ApplicationPackageRoot\TraefikPkg\ServiceManifest.xml)
+This can be setup in the Traefik service manifest. Refer to [Sample Service Manifest](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml)
 ```
     <SetupEntryPoint>
       <ExeHost>
