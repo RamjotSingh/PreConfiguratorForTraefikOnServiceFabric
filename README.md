@@ -11,7 +11,7 @@ This is done by utilizing [Service fabric per environment configuration](https:/
 ## How to?
 Refer to Samples directory for a working sample of how the integration works.
 
-#### Integrating pre-configurator in an existing Traefik Solution
+### Integrating pre-configurator in an existing Traefik Solution
 Integration of pre-configurator involves 3 steps :-
 1. Copy the binaries required for Pre-Configuration to run
 2. Enable pre-configurator to run using [SetupEntryPoint](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-run-script-at-service-startup)
@@ -19,7 +19,7 @@ Integration of pre-configurator involves 3 steps :-
 
 Follow the steps to perform the steps above.
 
-##### Copying binaries before Traefik packaging
+#### Copying binaries before Traefik packaging
 You can copy the place the binaries yourself next to Traefik binary or you can follow the sample to do so. In sample project in the Traefik.sfproj we have a PreBuildEvent
 ```
   <PropertyGroup>
@@ -43,7 +43,7 @@ To do this
 
 This requires the pre-configurator project to be present in same solution
 
-##### Setup pre-configurator to run before the Traefik
+#### Setup pre-configurator to run before the Traefik
 This can be setup in the Traefik service manifest. Refer to [Sample Service Manifest](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml)
 ```
     <SetupEntryPoint>
@@ -72,7 +72,7 @@ To provide the required configuration to pre-configurator, also add the followin
     </EnvironmentVariables>
 ```
 
-To provide values for each environment. These also need to be declared in the Application Manifest. Refer to [Sample application manifest](/Samples/Traefik/ApplicationPackageRoot/ApplicationManifest.xml)
+To provide values for each environment. These also need to be declared in the Application Manifest. Refer to [Sample Application Manifest](/Samples/Traefik/ApplicationPackageRoot/ApplicationManifest.xml)
 
 ```
     <!-- Parameters for Traefik PreConfigurator. These can now be overriden in any Application Parameter to cater to specific cluster needs. -->
@@ -103,9 +103,9 @@ Also override these parameters for the Traefik service
     </Policies>
   </ServiceManifestImport>
 ```
-##### Configure per-environment parameters.
+#### Configure per-environment parameters.
 Once the Application Manifest is set to provide values to Traefik service based on the values provided to it, now we can use Application Parameters to override values for different environment.
-Refer to the [sample application parameters](/Samples/Traefik/ApplicationParameters/Cloud.xml) to see how to configure values
+Refer to the [Sample Application Parameters](/Samples/Traefik/ApplicationParameters/Cloud.xml) to see how to configure values
 ```
 <Application Name="fabric:/Traefik" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Parameters>
