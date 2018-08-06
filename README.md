@@ -72,7 +72,7 @@ To provide the required configuration to pre-configurator, also add the followin
     </EnvironmentVariables>
 ```
 
-To provide values for each environment. These also need to be declared in the Application Manifest. Refer to [Sample application manifest](\Samples\Traefik\ApplicationPackageRoot\ApplicationManifest.xml)
+To provide values for each environment. These also need to be declared in the Application Manifest. Refer to [Sample application manifest](/Samples/Traefik/ApplicationPackageRoot/ApplicationManifest.xml)
 
 ```
     <!-- Parameters for Traefik PreConfigurator. These can now be overriden in any Application Parameter to cater to specific cluster needs. -->
@@ -105,7 +105,7 @@ Also override these parameters for the Traefik service
 ```
 ##### Configure per-environment parameters.
 Once the Application Manifest is set to provide values to Traefik service based on the values provided to it, now we can use Application Parameters to override values for different environment.
-Refer to the [sample application parameters](\Samples\Traefik\ApplicationParameters\Cloud.xml) to see how to configure values
+Refer to the [sample application parameters](/Samples/Traefik/ApplicationParameters/Cloud.xml) to see how to configure values
 ```
 <Application Name="fabric:/Traefik" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Parameters>
@@ -132,6 +132,6 @@ Identifier is Certificate thumbprint for LocalMachine and KeyVault secret name f
 Deploy the Traefik service fabric application and pre-configurator should configure the Traefik instance before running.
 
 ## Appendix - Using HTTPS on Traefik
-The above allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](Samples\Traefik\ApplicationPackageRoot\TraefikPkg\Code\traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
-However you need to also change the ServiceManifest to allow binding to port 443. Refer to the [sample manifest file](\Samples\Traefik\ApplicationPackageRoot\TraefikPkg\ServiceManifest.xml) and Endpoints section on how to do the same. You can optionally enable port 80 as well if needed.
+The above allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/Code/traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
+However you need to also change the ServiceManifest to allow binding to port 443. Refer to the [sample manifest file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml) and Endpoints section on how to do the same. You can optionally enable port 80 as well if needed.
 
