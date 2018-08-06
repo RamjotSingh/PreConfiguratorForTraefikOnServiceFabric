@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application Name="fabric:/Traefik" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Parameters>
+    <Parameter Name="TraefikApplicationInsightsKey" Value="Application insights key"/>
+    <Parameter Name="TraefikCertsToConfigure" Value="sslcert;KeyVault;SSLCert,clustercert;KeyVault;ClusterCert"/>
+    <Parameter Name="TraefikKeyVaultUri" Value="https://mysamplekeyvault.vault.azure.net/"/>
+    <Parameter Name="TraefikKeyVaultClientId" Value="591073d7-7f30-4472-b856-e4ceccf9f764"/>
+    <Parameter Name="TraefikKeyVaultClientCert" Value="7745662161272a590cf1d160e8777b03be3cca14"/>
+  </Parameters>
+</Application>
