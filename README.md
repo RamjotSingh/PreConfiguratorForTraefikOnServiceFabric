@@ -120,13 +120,13 @@ Refer to the [Sample Application Parameters](/Samples/Traefik/ApplicationParamet
 ```
 The parameters are as follows
 - **TraefikApplicationInsightsKey** - Application insights key. This is where the pre-configurator will send logs to
-- **TraefikCertsToConfigure** - Certificates to configure. These are to be specified in <fileName>;<Source>;<identifier> format with individual certs comma separated
+- **TraefikCertsToConfigure** - Certificates to configure. These are to be specified in *FileName*;*Source*;*Identifier* format with individual certs comma separated
 
-fileName is the filename of the cert on disk
+     FileName is the filename of the cert on disk
 
-Source can be LocalMachine or KeyVault, depending on which the certificate will either be picked from LocalMachine\MY store or the configured KeyVault
+     Source can be LocalMachine or KeyVault, depending on which the certificate will either be picked from LocalMachine\MY store or the configured KeyVault
 
-Identifier is Certificate thumbprint for LocalMachine and KeyVault secret name for KeyVault.
+     Identifier is Certificate thumbprint for LocalMachine and KeyVault secret name for KeyVault.
 
 *Note the certificates MUST be uploaded to keyvault using the Certificates option and not Secrets*
 - **TraefikKeyVaultUri** - Only required if you want to use KeyVault. This should be the KeyVault Uri. Start with https://
