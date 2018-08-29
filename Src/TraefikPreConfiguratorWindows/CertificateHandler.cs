@@ -237,19 +237,36 @@ namespace TraefikPreConfiguratorWindows
                 return Task.FromResult(ExitCode.CertificateMissingFromSource);
             }
 
+            X509Certificate2 selectedCertificate = certificateCollection[0];
+
+            // If more than 1 cert is found, choose the one with latest expiry.
             if (certificateCollection.Count > 1)
             {
-                Logger.LogError(CallInfo.Site(), "Multiple certs found for '{0}' with search condition '{1}'", certIdentifierSplit[0], x509FindType);
-                return Task.FromResult(ExitCode.InvalidCertConfiguration);
+                Logger.LogInfo(CallInfo.Site(), "Found multiple certificates which match the search identifier, selecting the one with latest expiry");
+
+                foreach (X509Certificate2 x509Certificate2 in certificateCollection)
+                {
+                    // If the first selected certificate did not have a private key on it and
+                    // we found another cert with private key pick that up.
+                    if (!selectedCertificate.HasPrivateKey && x509Certificate2.HasPrivateKey)
+                    {
+                        selectedCertificate = x509Certificate2;
+                    }
+
+                    if (x509Certificate2.NotAfter > selectedCertificate.NotAfter && x509Certificate2.HasPrivateKey)
+                    {
+                        selectedCertificate = x509Certificate2;
+                    }
+                }
             }
 
-            if (!certificateCollection[0].HasPrivateKey)
+            if (!selectedCertificate.HasPrivateKey)
             {
-                Logger.LogError(CallInfo.Site(), "Certificate with name '{0}' has missing Private Key", certificateName);
+                Logger.LogError(CallInfo.Site(), "Certificate with name '{0}' and thumbprint '{1}' has missing Private Key", certificateName, selectedCertificate.Thumbprint);
                 return Task.FromResult(ExitCode.PrivateKeyMissingOnCertificate);
             }
 
-            byte[] rawCertData = certificateCollection[0].Export(X509ContentType.Pfx, DefaultPfxPassword);
+            byte[] rawCertData = selectedCertificate.Export(X509ContentType.Pfx, DefaultPfxPassword);
 
             return Task.FromResult(SaveCertificatePrivateKeyToDisk(rawCertData, certificateName, fullDirectoryPath));
         }
