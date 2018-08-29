@@ -81,16 +81,16 @@ namespace TraefikPreConfiguratorWindows
                 }
                 else
                 {
-                    X509Certificate2 certificate = CertHelpers.FindCertificateByThumbprint(keyVaultClientCert);
+                    X509Certificate2Collection keyVaultCerts = CertHelpers.FindCertificates(keyVaultClientCert, X509FindType.FindByThumbprint);
 
-                    if (certificate == null)
+                    if (keyVaultCerts.Count == 0)
                     {
                         Logger.LogError(CallInfo.Site(), "Failed to find Client cert with thumbprint '{0}'", keyVaultClientCert);
                         return ExitCode.KeyVaultConfigurationIncomplete;
                     }
 
                     KeyVaultClient.AuthenticationCallback callback =
-                        (authority, resource, scope) => GetTokenFromClientCertificateAsync(authority, resource, keyVaultClientId, certificate);
+                        (authority, resource, scope) => GetTokenFromClientCertificateAsync(authority, resource, keyVaultClientId, keyVaultCerts[0]);
                     keyVaultClient = new KeyVaultClient(callback);
                 }
             }
@@ -205,26 +205,51 @@ namespace TraefikPreConfiguratorWindows
         /// Extracts PFX from a local cert present in LocalMachine store under My.
         /// </summary>
         /// <param name="certificateName">Name of the certificate.</param>
-        /// <param name="certificateThumbprint">The certificate thumbprint.</param>
+        /// <param name="certificateIdentitier">The certificate identifier.</param>
         /// <param name="fullDirectoryPath">The full directory path to drop PFX at.</param>
         /// <returns>Exit code for the operation.</returns>
-        private static Task<ExitCode> LocalMachineCertHandlerAsync(string certificateName, string certificateThumbprint, string fullDirectoryPath)
+        private static Task<ExitCode> LocalMachineCertHandlerAsync(string certificateName, string certificateIdentitier, string fullDirectoryPath)
         {
-            X509Certificate2 certificate = CertHelpers.FindCertificateByThumbprint(certificateThumbprint, StoreName.My, StoreLocation.LocalMachine);
+            // Split the Certificate identifier on :. If we don't find ':' then we assume the identifier is a thumbprint,
+            // otherwise we try to figure what identifier the user gave. We support X509FindType values as string.
+            string[] certIdentifierSplit = certificateIdentitier.Split(':');
 
-            if (certificate == null)
+            X509FindType x509FindType = X509FindType.FindByThumbprint;
+
+            if (certIdentifierSplit.Length > 0)
+            {
+                if (!Enum.TryParse<X509FindType>(certIdentifierSplit[1], out x509FindType))
+                {
+                    Logger.LogError(CallInfo.Site(), "Invalid Find type value used '{0}' in Ceritificate identifier '{1}'", certIdentifierSplit[1], certificateIdentitier);
+                    return Task.FromResult(ExitCode.InvalidCertConfiguration);
+                }
+            }
+
+            X509Certificate2Collection certificateCollection = CertHelpers.FindCertificates(
+                certIdentifierSplit[0],
+                x509FindType,
+                StoreName.My,
+                StoreLocation.LocalMachine);
+
+            if (certificateCollection.Count == 0)
             {
                 Logger.LogError(CallInfo.Site(), "Failed to find certificate with name '{0}'", certificateName);
                 return Task.FromResult(ExitCode.CertificateMissingFromSource);
             }
 
-            if (!certificate.HasPrivateKey)
+            if (certificateCollection.Count > 1)
+            {
+                Logger.LogError(CallInfo.Site(), "Multiple certs found for '{0}' with search condition '{1}'", certIdentifierSplit[0], x509FindType);
+                return Task.FromResult(ExitCode.InvalidCertConfiguration);
+            }
+
+            if (!certificateCollection[0].HasPrivateKey)
             {
                 Logger.LogError(CallInfo.Site(), "Certificate with name '{0}' has missing Private Key", certificateName);
                 return Task.FromResult(ExitCode.PrivateKeyMissingOnCertificate);
             }
 
-            byte[] rawCertData = certificate.Export(X509ContentType.Pfx, DefaultPfxPassword);
+            byte[] rawCertData = certificateCollection[0].Export(X509ContentType.Pfx, DefaultPfxPassword);
 
             return Task.FromResult(SaveCertificatePrivateKeyToDisk(rawCertData, certificateName, fullDirectoryPath));
         }

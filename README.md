@@ -135,7 +135,7 @@ The parameters are as follows
 
 Deploy the Traefik service fabric application and pre-configurator should configure the Traefik instance before running.
 
-## Appendix - Using HTTPS on Traefik
+## Appendix 1 - Using HTTPS on Traefik
 The above process allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/Code/traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
 However you need to also change the ServiceManifest to allow binding to port 443. Refer to the [sample manifest file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml) and Endpoints section on how to do the same. You can optionally enable port 80 as well if needed.
 ```
@@ -159,3 +159,9 @@ address = ":8080"
       certFile = "certs/sslcert.crt"
       keyFile = "certs/sslcert.key"
 ```
+
+## Appendix 2 - Searching for certs by SubjectName and other methods
+Often at times it can be tricky to keep using thumbprint for certificates as it will require changes to Traefik configuration everytime the certificates are rotated (renewed etc.). For such cases it is usually better to use other
+identifiers like Subject name. Pre-Configurator supports this by modifier the Ceritifcate idenfitier and by adding [X509FindType](https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509findtype) value at the end separated by ':'. For example to search by Subject name you can use
+```clustercert;LocalMachine;MyClusterCert:FindBySubjectName``` where MyClusterCert is the Subject name of the certificate. Similarily you can use 
+```clustercert;LocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663:FindByThumbprint``` although it will have the same result as ```clustercert;LocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663```. This method is only supported for Local Machine certificates and not for KeyVault certificates.
