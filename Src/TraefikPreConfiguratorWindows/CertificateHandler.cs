@@ -18,11 +18,6 @@ namespace TraefikPreConfiguratorWindows
     internal static class CertificateHandler
     {
         /// <summary>
-        /// The default password used for PFX.
-        /// </summary>
-        private const string DefaultPfxPassword = "TraefikOnSF1@";
-
-        /// <summary>
         /// Arguments to be used to extract .key out of .Pfx.
         /// </summary>
         private const string PrivateKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -nocerts -nodes -out \"\"{1}\"\" -passin pass:{2}";
@@ -116,8 +111,6 @@ namespace TraefikPreConfiguratorWindows
                 var certConfig =
                     new { CertName = certConfigurationParams[0], CertSource = certConfigurationParams[1], CertIdentifier = certConfigurationParams[2] };
 
-                string pfxPassword = null;
-
                 // 3b. Depending on the source of Cert get the PFX for the certs dropped into the directory.
                 if (certConfig.CertSource.Equals("MyLocalMachine", StringComparison.OrdinalIgnoreCase))
                 {
@@ -130,8 +123,6 @@ namespace TraefikPreConfiguratorWindows
                     {
                         return localMachineCertHandler;
                     }
-
-                    pfxPassword = DefaultPfxPassword;
                 }
                 else if (certConfig.CertSource.Equals("KeyVault", StringComparison.OrdinalIgnoreCase))
                 {
@@ -146,8 +137,6 @@ namespace TraefikPreConfiguratorWindows
                     {
                         return keyVaultCertHandlerExitCode;
                     }
-
-                    pfxPassword = string.Empty;
                 }
                 else
                 {
@@ -156,7 +145,7 @@ namespace TraefikPreConfiguratorWindows
                 }
 
                 // 3c. Convert PFX into .Key and .Crt. We are placing openssl next to this exe hence using current directory.
-                ExitCode conversionExitCode = ConvertPfxIntoPemFormat(certConfig.CertName, fullDirectoryPathForCerts, currentExeDirectory, pfxPassword);
+                ExitCode conversionExitCode = ConvertPfxIntoPemFormat(certConfig.CertName, fullDirectoryPathForCerts, currentExeDirectory, password: string.Empty);
 
                 if (conversionExitCode != ExitCode.Success)
                 {
@@ -266,7 +255,7 @@ namespace TraefikPreConfiguratorWindows
                 return Task.FromResult(ExitCode.PrivateKeyMissingOnCertificate);
             }
 
-            byte[] rawCertData = selectedCertificate.Export(X509ContentType.Pfx, DefaultPfxPassword);
+            byte[] rawCertData = selectedCertificate.Export(X509ContentType.Pfx);
 
             return Task.FromResult(SaveCertificatePrivateKeyToDisk(rawCertData, certificateName, fullDirectoryPath));
         }
