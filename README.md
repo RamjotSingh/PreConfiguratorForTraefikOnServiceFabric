@@ -110,7 +110,7 @@ Refer to the [Sample Application Parameters](/Samples/Traefik/ApplicationParamet
 <Application Name="fabric:/Traefik" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Parameters>
     <Parameter Name="TraefikApplicationInsightsKey" Value="Application insights key"/>
-    <Parameter Name="TraefikCertsToConfigure" Value="sslcert;KeyVault;SSLCert,clustercert;LocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663"/>
+    <Parameter Name="TraefikCertsToConfigure" Value="sslcert;KeyVault;SSLCert,clustercert;MyLocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663"/>
     <Parameter Name="TraefikKeyVaultUri" Value="https://mysamplekeyvault.vault.azure.net/"/>
     <Parameter Name="TraefikKeyVaultClientId" Value="591073d7-7f30-4472-b856-e4ceccf9f764"/>
     <Parameter Name="TraefikKeyVaultClientSecret" Value=""/>
@@ -124,7 +124,7 @@ The parameters are as follows
 
      FileName is the filename of the cert on disk
 
-     Source can be LocalMachine or KeyVault, depending on which the certificate will either be picked from LocalMachine\MY store or the configured KeyVault
+     Source can be MyLocalMachine or KeyVault, depending on which the certificate will either be picked from LocalMachine\MY store or the configured KeyVault
 
      Identifier is Certificate thumbprint for LocalMachine and KeyVault secret name for KeyVault.
 
@@ -166,14 +166,14 @@ identifiers like Subject name.
 
 Pre-Configurator supports this by adding [X509FindType](https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509findtype) value at the end of the certificate identifier separated by ':'. For example to search by Subject name you can use
 
-```clustercert;LocalMachine;MyClusterCert:FindBySubjectName``` 
+```clustercert;MyLocalMachine;MyClusterCert:FindBySubjectName``` 
 
 where MyClusterCert is the Subject name of the certificate. Similarily you can use 
 
-```clustercert;LocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663:FindByThumbprint``` 
+```clustercert;MyLocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663:FindByThumbprint``` 
 
 although it will have the same result as 
 
-```clustercert;LocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663```. 
+```clustercert;MyLocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663```. 
 
 This method is only supported for Local Machine certificates and not for KeyVault certificates.
