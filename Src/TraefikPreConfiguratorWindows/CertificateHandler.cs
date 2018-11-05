@@ -25,12 +25,12 @@ namespace TraefikPreConfiguratorWindows
         /// <summary>
         /// Arguments to be used to extract .key out of .Pfx.
         /// </summary>
-        private const string PrivateKeyExportArguments = "/c \"{0} pkcs12 -in \"\"{1}\"\" -nocerts -nodes -out \"\"{2}\"\" -passin pass:{3}\"";
+        private const string PrivateKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -nocerts -nodes -out \"\"{1}\"\" -passin pass:{2}";
 
         /// <summary>
         /// Arguments to be used to extract .crt out of .Pfx.
         /// </summary>
-        private const string PublicKeyExportArguments = "/c \"{0} pkcs12 -in \"\"{1}\"\" -clcerts -nokeys -out \"\"{2}\"\" -passin pass:{3}\"";
+        private const string PublicKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -clcerts -nokeys -out \"\"{1}\"\" -passin pass:{2}";
 
         /// <summary>
         /// Processes the certificate management.
@@ -216,7 +216,7 @@ namespace TraefikPreConfiguratorWindows
 
             X509FindType x509FindType = X509FindType.FindByThumbprint;
 
-            if (certIdentifierSplit.Length > 0)
+            if (certIdentifierSplit.Length > 1)
             {
                 if (!Enum.TryParse<X509FindType>(certIdentifierSplit[1], out x509FindType))
                 {
@@ -350,18 +350,15 @@ namespace TraefikPreConfiguratorWindows
 
             string keyExtractionProcessArgs = string.Format(
                 PrivateKeyExportArguments,
-                opensslPath,
                 pathToPfx,
                 Path.Combine(certDirectoryPath, certificateName + ".key"),
                 password);
 
-            // We have to start cmd.exe as openssl.exe exit is not read by Process class.
             Logger.LogVerbose(CallInfo.Site(), "Starting extraction of Private key for '{0}' using '{0}'", certificateName, opensslPath);
-            Process exportPrivateKeyProcess = Process.Start("cmd", keyExtractionProcessArgs);
-            exportPrivateKeyProcess.WaitForExit();
-            Logger.LogVerbose(CallInfo.Site(), "Private key extraction for certificate '{0}' process completed with exit code '{1}'", certificateName, exportPrivateKeyProcess.ExitCode);
+            int exportPrivateKeyExitCode = ExecuteOpensslProcess(opensslPath, keyExtractionProcessArgs);
+            Logger.LogVerbose(CallInfo.Site(), "Private key extraction for certificate '{0}' process completed with exit code '{1}'", certificateName, exportPrivateKeyExitCode);
 
-            if (exportPrivateKeyProcess.ExitCode != 0)
+            if (exportPrivateKeyExitCode != 0)
             {
                 Logger.LogError(CallInfo.Site(), "Private key extraction failed for certificate name '{0}'", certificateName);
                 return ExitCode.PrivateKeyExtractionFailed;
@@ -369,24 +366,44 @@ namespace TraefikPreConfiguratorWindows
 
             string crtExtractionProcessArgs = string.Format(
                 PublicKeyExportArguments,
-                opensslPath,
                 pathToPfx,
                 Path.Combine(certDirectoryPath, certificateName + ".crt"),
                 password);
 
-            // We have to start cmd.exe as openssl.exe exit is not read by Process class.
             Logger.LogVerbose(CallInfo.Site(), "Starting extraction of Public key from PFX using '{0}'", opensslPath);
-            Process exportPublicKeyProcess = Process.Start("cmd", crtExtractionProcessArgs);
-            exportPublicKeyProcess.WaitForExit();
-            Logger.LogVerbose(CallInfo.Site(), "Public key extraction for certificate '{0}' process completed with exit code '{1}'", certificateName, exportPublicKeyProcess.ExitCode);
+            int exportPublicKeyExitCode = ExecuteOpensslProcess(opensslPath, crtExtractionProcessArgs);
+            Logger.LogVerbose(CallInfo.Site(), "Public key extraction for certificate '{0}' process completed with exit code '{1}'", certificateName, exportPublicKeyExitCode);
 
-            if (exportPublicKeyProcess.ExitCode != 0)
+            if (exportPublicKeyExitCode != 0)
             {
                 Logger.LogError(CallInfo.Site(), "Public key extraction failed for certificate name '{0}'", certificateName);
                 return ExitCode.PublicKeyExtractionFailed;
             }
 
             return ExitCode.Success;
+        }
+
+        private static int ExecuteOpensslProcess(string opensslPath, string arguments)
+        {
+            ProcessStartInfo processStartInfo = new ProcessStartInfo(
+                opensslPath,
+                arguments);
+            processStartInfo.CreateNoWindow = true;
+            processStartInfo.UseShellExecute = false;
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.RedirectStandardError = true;
+
+            Process process = Process.Start(processStartInfo);
+            process.WaitForExit(milliseconds: 60 * 1000);
+
+            // If the process hung and failed to exit, cancel it.
+            if (!process.HasExited)
+            {
+                process.Kill();
+                return -999;
+            }
+
+            return process.ExitCode;
         }
     }
 }
