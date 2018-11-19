@@ -4,6 +4,7 @@ namespace TraefikPreConfiguratorWindows
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
@@ -80,7 +81,7 @@ namespace TraefikPreConfiguratorWindows
         /// <param name="exp">The exception.</param>
         public static void LogError(CallInfo callInfo, Exception exp)
         {
-            Log(callInfo, TraceLevel.Error, string.Format("Exception: {0}", exp));
+            Log(callInfo, TraceLevel.Error, $"Exception: {exp}");
         }
 
         /// <summary>
@@ -95,7 +96,7 @@ namespace TraefikPreConfiguratorWindows
             Log(
                 callInfo,
                 TraceLevel.Error,
-                string.Format("CustomMessage {0} \n Exception {1}", GetMessage(customMessageFormat, arguments), exp));
+                $"CustomMessage {GetMessage(customMessageFormat, arguments)} \n Exception {exp}");
         }
 
         /// <summary>
@@ -106,7 +107,7 @@ namespace TraefikPreConfiguratorWindows
         /// <param name="message">The message.</param>
         private static void Log(CallInfo callInfo, TraceLevel traceLevel, string message)
         {
-            string messageToLog = callInfo.ToString() + " -- " + message;
+            string messageToLog = callInfo.ToString() + " -- " + traceLevel.ToString() + " -- " + message;
             Console.WriteLine(messageToLog);
             telemetryClient.TrackTrace(messageToLog);
         }
@@ -125,7 +126,7 @@ namespace TraefikPreConfiguratorWindows
             }
             else
             {
-                return string.Format(messageFormat, arguments);
+                return string.Format(CultureInfo.InvariantCulture, messageFormat, arguments);
             }
         }
     }

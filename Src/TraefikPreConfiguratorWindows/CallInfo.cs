@@ -5,10 +5,12 @@ namespace TraefikPreConfiguratorWindows
     using System.IO;
     using System.Runtime.CompilerServices;
 
+#pragma warning disable CA1815 // Override equals and operator equals on value types - Used only for logging purposes.
     /// <summary>
     /// Holds information such as file name, line number, and method name of the caller.
     /// </summary>
     public struct CallInfo
+#pragma warning restore CA1815 // Override equals and operator equals on value types - Used only for logging purposes.
     {
         /// <summary>
         /// Gets or sets the file name.
@@ -58,7 +60,7 @@ namespace TraefikPreConfiguratorWindows
         /// <returns>A formatted string.</returns>
         public override string ToString()
         {
-            return string.Format("{0}:{1}-{2}", this.FilePath, this.LineNumber, this.MethodName);
+            return $"{this.FilePath}:{this.LineNumber}-{this.MethodName}";
         }
     }
 }

@@ -4,6 +4,7 @@ namespace TraefikPreConfiguratorWindows
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
     using System.Reflection;
     using System.Security.Cryptography.X509Certificates;
@@ -338,6 +339,7 @@ namespace TraefikPreConfiguratorWindows
             string pathToPfx = Path.Combine(certDirectoryPath, certificateName + ".pfx");
 
             string keyExtractionProcessArgs = string.Format(
+                CultureInfo.InvariantCulture,
                 PrivateKeyExportArguments,
                 pathToPfx,
                 Path.Combine(certDirectoryPath, certificateName + ".key"),
@@ -354,6 +356,7 @@ namespace TraefikPreConfiguratorWindows
             }
 
             string crtExtractionProcessArgs = string.Format(
+                CultureInfo.InvariantCulture,
                 PublicKeyExportArguments,
                 pathToPfx,
                 Path.Combine(certDirectoryPath, certificateName + ".crt"),
@@ -376,11 +379,13 @@ namespace TraefikPreConfiguratorWindows
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo(
                 opensslPath,
-                arguments);
-            processStartInfo.CreateNoWindow = true;
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.RedirectStandardError = true;
+                arguments)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
 
             Process process = Process.Start(processStartInfo);
             process.WaitForExit(milliseconds: 60 * 1000);
