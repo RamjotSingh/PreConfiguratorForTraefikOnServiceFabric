@@ -77,20 +77,20 @@ namespace TraefikPreConfiguratorWindows
                 try
                 {
                     bool useEnvironmentVariables = useEnvironmentVariablesOption.HasValue();
-                    if (applicationInsightsInstrumentationKeyOption.HasValueEx(useEnvironmentVariables))
+                    if (applicationInsightsInstrumentationKeyOption.HasValueExtended(useEnvironmentVariables))
                     {
-                        Logger.ConfigureLogger(applicationInsightsInstrumentationKeyOption.GetValueEx(useEnvironmentVariables));
+                        Logger.ConfigureLogger(applicationInsightsInstrumentationKeyOption.GetValueExtended(useEnvironmentVariables));
                     }
 
-                    if (configureCertsOption.HasValueEx(useEnvironmentVariables))
+                    if (configureCertsOption.HasValueExtended(useEnvironmentVariables))
                     {
                         ExitCode certHandlerExitCode = await CertificateHandler.ProcessAsync(
-                            configureCertsOption.GetValueEx(useEnvironmentVariables),
-                            certsToConfigureOption.GetValueEx(useEnvironmentVariables),
-                            keyVaultUriOption.GetValueEx(useEnvironmentVariables),
-                            keyVaultClientIdOption.GetValueEx(useEnvironmentVariables),
-                            keyVaultClientSecretOption.GetValueEx(useEnvironmentVariables),
-                            keyVaultClientCertThumbprintOption.GetValueEx(useEnvironmentVariables)).ConfigureAwait(false);
+                            configureCertsOption.GetValueExtended(useEnvironmentVariables),
+                            certsToConfigureOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultUriOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultClientIdOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultClientSecretOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultClientCertThumbprintOption.GetValueExtended(useEnvironmentVariables)).ConfigureAwait(false);
 
                         if (certHandlerExitCode != ExitCode.Success)
                         {

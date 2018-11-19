@@ -16,9 +16,9 @@ namespace TraefikPreConfiguratorWindows
         /// <param name="commandOption">The command option.</param>
         /// <param name="useEnvironmentVariable">True, if environment variable is to be used instead of command line.</param>
         /// <returns>Value for the command option.</returns>
-        public static string GetValueEx(this CommandOption commandOption, bool useEnvironmentVariable)
+        public static string GetValueExtended(this CommandOption commandOption, bool useEnvironmentVariable)
         {
-            if (!commandOption.HasValueEx(useEnvironmentVariable))
+            if (!commandOption.HasValueExtended(useEnvironmentVariable))
             {
                 return null;
             }
@@ -41,7 +41,7 @@ namespace TraefikPreConfiguratorWindows
         /// <returns>
         ///   <c>true</c> if command option has value; otherwise, <c>false</c>.
         /// </returns>
-        public static bool HasValueEx(this CommandOption commandOption, bool useEnvironmentVariable)
+        public static bool HasValueExtended(this CommandOption commandOption, bool useEnvironmentVariable)
         {
             if (useEnvironmentVariable)
             {
