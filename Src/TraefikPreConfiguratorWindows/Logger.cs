@@ -27,7 +27,7 @@ namespace TraefikPreConfiguratorWindows
         {
             TelemetryConfiguration telemetryConfiguration = new TelemetryConfiguration(instrumentationKey);
             new DiagnosticsTelemetryModule().Initialize(telemetryConfiguration);
-            telemetryClient = new TelemetryClient(telemetryConfiguration);
+            Logger.telemetryClient = new TelemetryClient(telemetryConfiguration);
         }
 
         /// <summary>
@@ -100,6 +100,14 @@ namespace TraefikPreConfiguratorWindows
         }
 
         /// <summary>
+        /// Flushes the logs to the backend diagnostics engine.
+        /// </summary>
+        public static void Flush()
+        {
+            Logger.telemetryClient.Flush();
+        }
+
+        /// <summary>
         /// Logs message to underlying loggers.
         /// </summary>
         /// <param name="callInfo">The call information.</param>
@@ -109,7 +117,7 @@ namespace TraefikPreConfiguratorWindows
         {
             string messageToLog = callInfo.ToString() + " -- " + traceLevel.ToString() + " -- " + message;
             Console.WriteLine(messageToLog);
-            telemetryClient.TrackTrace(messageToLog);
+            Logger.telemetryClient.TrackTrace(messageToLog);
         }
 
         /// <summary>

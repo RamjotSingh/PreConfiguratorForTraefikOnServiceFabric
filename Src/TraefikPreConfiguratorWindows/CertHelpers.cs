@@ -7,7 +7,7 @@ namespace TraefikPreConfiguratorWindows
     /// <summary>
     /// Certificate helpers.
     /// </summary>
-    public static class CertHelpers
+    internal static class CertHelpers
     {
         /// <summary>
         /// Finds the certificates with given parameters.
