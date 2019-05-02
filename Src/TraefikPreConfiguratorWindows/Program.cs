@@ -54,7 +54,7 @@ namespace TraefikPreConfiguratorWindows
             CommandOption keyVaultUriOption = commandLineApplication.Option(
                 "--KeyVaultUri <KeyVaultUri>",
                 "Uri to use for KeyVault connection. Use --KeyVaultClientId to specify ClientId of the app to use to access Key Vault.",
-                CommandOptionType.SingleValue);
+                CommandOptionType.MultipleValue);
             CommandOption keyVaultClientIdOption = commandLineApplication.Option(
                 "--KeyVaultClientId <ClientId>",
                 "Client Id to use for KeyVault connection. Specify the secret by using --KeyVaultClientSecret or --KeyVaultClientCert.",
@@ -91,11 +91,11 @@ namespace TraefikPreConfiguratorWindows
                         ExitCode certHandlerExitCode = await CertificateHandler.ProcessAsync(
                             configureCertsOption.GetValueExtended(useEnvironmentVariables),
                             certsToConfigureOption.GetValueExtended(useEnvironmentVariables),
-                            keyVaultUriOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultUriOption.GetValuesExtended(useEnvironmentVariables),
                             keyVaultClientIdOption.GetValueExtended(useEnvironmentVariables),
                             keyVaultClientSecretOption.GetValueExtended(useEnvironmentVariables),
                             keyVaultClientCertThumbprintOption.GetValueExtended(useEnvironmentVariables),
-                            !string.IsNullOrEmpty(useManagedIdentity.GetValueExtended(useEnvironmentVariables))).ConfigureAwait(false);
+                            useManagedIdentity.IsSwitchSpecified(useEnvironmentVariables)).ConfigureAwait(false);
 
                         if (certHandlerExitCode != ExitCode.Success)
                         {
