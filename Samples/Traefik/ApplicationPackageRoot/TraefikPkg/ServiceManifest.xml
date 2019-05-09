@@ -32,6 +32,7 @@
     </EntryPoint>
     <!-- Environment variables used by Treafik PreConfigurator to download and convert certificates. -->
     <EnvironmentVariables>
+      <EnvironmentVariable Name="UseManagedIdentity" Value="false"/>
       <EnvironmentVariable Name="ConfigureCerts" Value=""/>
       <EnvironmentVariable Name="ApplicationInsightsKey" Value=""/>
       <EnvironmentVariable Name="CertsToConfigure" Value=""/>

@@ -54,7 +54,7 @@ namespace TraefikPreConfiguratorWindows
             CommandOption keyVaultUriOption = commandLineApplication.Option(
                 "--KeyVaultUri <KeyVaultUri>",
                 "Uri to use for KeyVault connection. Use --KeyVaultClientId to specify ClientId of the app to use to access Key Vault.",
-                CommandOptionType.SingleValue);
+                CommandOptionType.MultipleValue);
             CommandOption keyVaultClientIdOption = commandLineApplication.Option(
                 "--KeyVaultClientId <ClientId>",
                 "Client Id to use for KeyVault connection. Specify the secret by using --KeyVaultClientSecret or --KeyVaultClientCert.",
@@ -63,6 +63,10 @@ namespace TraefikPreConfiguratorWindows
                 "--KeyVaultClientSecret <ClientSecret>",
                 "Client secret to use for KeyVault connection. Specify the ClientId using --KeyVaultClientId.",
                 CommandOptionType.SingleValue);
+            CommandOption useManagedIdentity = commandLineApplication.Option(
+                "--UseManagedIdentity",
+                "Uses Managed Identity for authenticating with KeyVault. You can specify the client Id if you want to use one in --KeyVaultClientId option.",
+                CommandOptionType.NoValue);
             CommandOption keyVaultClientCertThumbprintOption = commandLineApplication.Option(
                 "--KeyVaultClientCert <ClientCertThumbprint>",
                 "Cert thumbprint to be used to contact key vault. The cert needs to be present on the machine. Specify the ClientId using --KeyVaultClientId.",
@@ -87,10 +91,11 @@ namespace TraefikPreConfiguratorWindows
                         ExitCode certHandlerExitCode = await CertificateHandler.ProcessAsync(
                             configureCertsOption.GetValueExtended(useEnvironmentVariables),
                             certsToConfigureOption.GetValueExtended(useEnvironmentVariables),
-                            keyVaultUriOption.GetValueExtended(useEnvironmentVariables),
+                            keyVaultUriOption.GetValuesExtended(useEnvironmentVariables),
                             keyVaultClientIdOption.GetValueExtended(useEnvironmentVariables),
                             keyVaultClientSecretOption.GetValueExtended(useEnvironmentVariables),
-                            keyVaultClientCertThumbprintOption.GetValueExtended(useEnvironmentVariables)).ConfigureAwait(false);
+                            keyVaultClientCertThumbprintOption.GetValueExtended(useEnvironmentVariables),
+                            useManagedIdentity.IsSwitchSpecified(useEnvironmentVariables)).ConfigureAwait(false);
 
                         if (certHandlerExitCode != ExitCode.Success)
                         {
@@ -118,6 +123,7 @@ namespace TraefikPreConfiguratorWindows
             });
 
             commandLineApplication.Execute(args);
+            Logger.Flush();
         }
     }
 }

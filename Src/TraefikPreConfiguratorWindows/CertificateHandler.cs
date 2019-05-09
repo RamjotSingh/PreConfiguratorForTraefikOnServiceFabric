@@ -3,15 +3,19 @@
 namespace TraefikPreConfiguratorWindows
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Reflection;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Models;
+    using Microsoft.Azure.Services.AppAuthentication;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Rest.Azure;
 
     /// <summary>
     /// Performs Certificate related tasks.
@@ -34,12 +38,20 @@ namespace TraefikPreConfiguratorWindows
         /// <param name="directoryPath">Directory to put the certificatex in.</param>
         /// <param name="certConfiguration">Certificate configuration. This is a combination of comma separated values in following format
         /// *certFileName*;*SourceOfCert*;*CertIdentifierInSource*.</param>
-        /// <param name="keyVaultUri">KeyVault uri if key vault is to be used.</param>
+        /// <param name="keyVaultUris">KeyVault uris if key vault is to be used.</param>
         /// <param name="keyVaultClientId">Application client Id to access keyvault.</param>
         /// <param name="keyVaultClientSecret">Application client secret to access keyvault.</param>
         /// <param name="keyVaultClientCert">Application client certificate thumbprint if the keyvault app has certificate credentials.</param>
+        /// <param name="useManagedIdentity">Use managed identity.</param>
         /// <returns>Exit code for the operation.</returns>
-        internal static async Task<ExitCode> ProcessAsync(string directoryPath, string certConfiguration, string keyVaultUri, string keyVaultClientId, string keyVaultClientSecret, string keyVaultClientCert)
+        internal static async Task<ExitCode> ProcessAsync(
+            string directoryPath,
+            string certConfiguration,
+            List<string> keyVaultUris,
+            string keyVaultClientId,
+            string keyVaultClientSecret,
+            string keyVaultClientCert,
+            bool useManagedIdentity)
         {
             if (string.IsNullOrEmpty(directoryPath))
             {
@@ -55,39 +67,77 @@ namespace TraefikPreConfiguratorWindows
 
             // 1. Initialize KeyVault Client if params were passed.
             KeyVaultClient keyVaultClient = null;
-            if (!string.IsNullOrEmpty(keyVaultUri))
+            Dictionary<string, string> keyVaultSecretMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (keyVaultUris.Any())
             {
-                if (string.IsNullOrEmpty(keyVaultClientId))
-                {
-                    Logger.LogError(CallInfo.Site(), "If KeyVaultUri is specified, KeyVault ClientId must be specified");
-                    return ExitCode.KeyVaultConfigurationIncomplete;
-                }
+                KeyVaultClient.AuthenticationCallback callback = null;
 
-                if (string.IsNullOrEmpty(keyVaultClientSecret) && string.IsNullOrEmpty(keyVaultClientCert))
+                if (useManagedIdentity)
                 {
-                    Logger.LogError(CallInfo.Site(), "If KeyVaultUri is specified, KeyVault ClientSecret or KeyVault ClientCert must be specified");
-                    return ExitCode.KeyVaultConfigurationIncomplete;
-                }
+                    string connectionString = "RunAs=App";
 
-                if (!string.IsNullOrEmpty(keyVaultClientSecret))
-                {
-                    KeyVaultClient.AuthenticationCallback callback =
-                        (authority, resource, scope) => GetTokenFromClientSecretAsync(authority, resource, keyVaultClientId, keyVaultClientSecret);
-                    keyVaultClient = new KeyVaultClient(callback);
+                    if (!string.IsNullOrEmpty(keyVaultClientId))
+                    {
+                        connectionString = connectionString + ";AppId=" + keyVaultClientId;
+                    }
+
+                    AzureServiceTokenProvider tokenProvider = new AzureServiceTokenProvider(connectionString);
+                    callback = new KeyVaultClient.AuthenticationCallback(tokenProvider.KeyVaultTokenCallback);
                 }
                 else
                 {
-                    X509Certificate2Collection keyVaultCerts = CertHelpers.FindCertificates(keyVaultClientCert, X509FindType.FindByThumbprint);
-
-                    if (keyVaultCerts.Count == 0)
+                    if (string.IsNullOrEmpty(keyVaultClientId))
                     {
-                        Logger.LogError(CallInfo.Site(), "Failed to find Client cert with thumbprint '{0}'", keyVaultClientCert);
+                        Logger.LogError(CallInfo.Site(), "If KeyVaultUri is specified and managed identity is not used, KeyVault ClientId must be specified");
                         return ExitCode.KeyVaultConfigurationIncomplete;
                     }
 
-                    KeyVaultClient.AuthenticationCallback callback =
-                        (authority, resource, scope) => GetTokenFromClientCertificateAsync(authority, resource, keyVaultClientId, keyVaultCerts[0]);
-                    keyVaultClient = new KeyVaultClient(callback);
+                    if (string.IsNullOrEmpty(keyVaultClientSecret) && string.IsNullOrEmpty(keyVaultClientCert))
+                    {
+                        Logger.LogError(CallInfo.Site(), "If KeyVaultUri is specified and managed identity is not used, KeyVault ClientSecret or KeyVault ClientCert must be specified");
+                        return ExitCode.KeyVaultConfigurationIncomplete;
+                    }
+
+                    if (!string.IsNullOrEmpty(keyVaultClientSecret))
+                    {
+                        callback =
+                            (authority, resource, scope) => GetTokenFromClientSecretAsync(authority, resource, keyVaultClientId, keyVaultClientSecret);
+                    }
+                    else
+                    {
+                        X509Certificate2Collection keyVaultCerts = CertHelpers.FindCertificates(keyVaultClientCert, X509FindType.FindByThumbprint);
+
+                        if (keyVaultCerts.Count == 0)
+                        {
+                            Logger.LogError(CallInfo.Site(), "Failed to find Client cert with thumbprint '{0}'", keyVaultClientCert);
+                            return ExitCode.KeyVaultConfigurationIncomplete;
+                        }
+
+                        callback =
+                            (authority, resource, scope) => GetTokenFromClientCertificateAsync(authority, resource, keyVaultClientId, keyVaultCerts[0]);
+                    }
+                }
+
+                keyVaultClient = new KeyVaultClient(callback);
+
+                foreach (string keyVaultUri in keyVaultUris)
+                {
+                    IPage<SecretItem> secrets = await keyVaultClient.GetSecretsAsync(keyVaultUri).ConfigureAwait(false);
+
+                    foreach (SecretItem secret in secrets)
+                    {
+                        keyVaultSecretMap[secret.Identifier.Name] = keyVaultUri;
+                    }
+
+                    while (!string.IsNullOrEmpty(secrets.NextPageLink))
+                    {
+                        secrets = await keyVaultClient.GetSecretsNextAsync(secrets.NextPageLink).ConfigureAwait(false);
+
+                        foreach (SecretItem secret in secrets)
+                        {
+                            keyVaultSecretMap[secret.Identifier.Name] = keyVaultUri;
+                        }
+                    }
                 }
             }
 
@@ -127,6 +177,12 @@ namespace TraefikPreConfiguratorWindows
                 }
                 else if (certConfig.CertSource.Equals("KeyVault", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (!keyVaultSecretMap.TryGetValue(certConfig.CertIdentifier, out string keyVaultUri))
+                    {
+                        Logger.LogError(CallInfo.Site(), "Certificate with name '{0}' missing from all specified KeyVaults", certConfig.CertIdentifier);
+                        return ExitCode.CertificateMissingFromSource;
+                    }
+
                     ExitCode keyVaultCertHandlerExitCode = await KeyVaultCertHandlerAsync(
                         certConfig.CertName,
                         certConfig.CertIdentifier,

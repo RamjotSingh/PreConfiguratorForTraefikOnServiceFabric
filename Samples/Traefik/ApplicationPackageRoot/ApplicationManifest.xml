@@ -9,6 +9,7 @@
     <Parameter Name="TraefikKeyVaultUri" DefaultValue=""/>
     <Parameter Name="TraefikKeyVaultClientId" DefaultValue=""/>
     <Parameter Name="TraefikKeyVaultClientCert" DefaultValue=""/>
+    <Parameter Name="TraefikUseManagedIdentityAuth" DefaultValue="false"/>
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
@@ -28,6 +29,7 @@
     <ConfigOverrides />
     <!-- Environment Overrides to allow overriding value for different environments -->
     <EnvironmentOverrides CodePackageRef="Code">
+      <EnvironmentVariable Name="UseManagedIdentity" Value="[TraefikUseManagedIdentityAuth]"/>
       <EnvironmentVariable Name="ApplicationInsightsKey" Value="[TraefikApplicationInsightsKey]"/>
       <EnvironmentVariable Name="CertsToConfigure" Value="[TraefikCertsToConfigure]"/>
       <EnvironmentVariable Name="KeyVaultUri" Value="[TraefikKeyVaultUri]"/>

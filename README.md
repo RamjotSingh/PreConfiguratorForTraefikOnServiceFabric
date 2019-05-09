@@ -20,14 +20,14 @@ Integration of pre-configurator involves 3 steps:-
 #### Copying binaries before Traefik packaging
 You can compile once and copy next to Traefik binary or you can do this using build process. Do perform copy on every build follow the sample project.
 In sample project, the Traefik.sfproj has a PreBuildEvent. This PreBuildEvent copies the required binaries.
-```
+```xml
   <PropertyGroup>
     <PreBuildEvent>xcopy /I /Y $(MSBuildThisFileDirectory)..\..\Src\TraefikPreConfiguratorWindows\bin\$(Configuration) $(MSBuildThisFileDirectory)ApplicationPackageRoot\TraefikPkg\Code</PreBuildEvent>
   </PropertyGroup>
 ```
 Adjust the path to copy to the correct directory. This requires the binaries to be compiled before they can be copied.
 To ensure that the binaries are always present before copy you can add a condition to the Validate MS Build target as shown below (just the last line is required, rest are just for completeness)
-```
+```xml
   <Target Name="ValidateMSBuildFiles">
     <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Azure.Fabric.MSBuild.1.6.6\build\Microsoft.VisualStudio.Azure.Fabric.Application.props')" Text="Unable to find the '..\packages\Microsoft.VisualStudio.Azure.Fabric.MSBuild.1.6.6\build\Microsoft.VisualStudio.Azure.Fabric.Application.props' file. Please restore the 'Microsoft.VisualStudio.Azure.Fabric.MSBuild' Nuget package." />
     <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Azure.Fabric.MSBuild.1.6.6\build\Microsoft.VisualStudio.Azure.Fabric.Application.targets')" Text="Unable to find the '..\packages\Microsoft.VisualStudio.Azure.Fabric.MSBuild.1.6.6\build\Microsoft.VisualStudio.Azure.Fabric.Application.targets' file. Please restore the 'Microsoft.VisualStudio.Azure.Fabric.MSBuild' Nuget package." />
@@ -44,7 +44,7 @@ This requires the pre-configurator project to be present in same solution.
 
 #### Setup pre-configurator to run before the Traefik
 This can be setup in the Traefik service manifest. Refer to [Sample Service Manifest](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/ServiceManifest.xml)
-```
+```xml
     <SetupEntryPoint>
       <ExeHost>
         <Program>TraefikPreConfiguratorWindows.exe</Program>
@@ -59,8 +59,9 @@ This can be setup in the Traefik service manifest. Refer to [Sample Service Mani
 This will ensure that pre-configurator is run before the Traefik binary.
 
 To provide the required configuration to pre-configurator, also add the following environment variables to Service manifest
-```
+```xml
     <EnvironmentVariables>
+      <EnvironmentVariable Name="UseManagedIdentity" Value="false"/>
       <EnvironmentVariable Name="ConfigureCerts" Value=""/>
       <EnvironmentVariable Name="ApplicationInsightsKey" Value=""/>
       <EnvironmentVariable Name="CertsToConfigure" Value=""/>
@@ -73,7 +74,7 @@ To provide the required configuration to pre-configurator, also add the followin
 
 To provide values for each environment, these also need to be declared in the Application Manifest. Refer to [Sample Application Manifest](/Samples/Traefik/ApplicationPackageRoot/ApplicationManifest.xml)
 
-```
+```xml
     <!-- Parameters for Traefik PreConfigurator. These can now be overriden in any Application Parameter to cater to specific cluster's needs. -->
     <Parameter Name="TraefikApplicationInsightsKey" DefaultValue=""/>
     <Parameter Name="TraefikCertsToConfigure" DefaultValue=""/>
@@ -81,16 +82,18 @@ To provide values for each environment, these also need to be declared in the Ap
     <Parameter Name="TraefikKeyVaultClientId" DefaultValue=""/>
     <Parameter Name="TraefikKeyVaultClientSecret" DefaultValue=""/>
     <Parameter Name="TraefikKeyVaultClientCert" DefaultValue=""/>
+    <Parameter Name="TraefikUseManagedIdentityAuth" DefaultValue="false"/>
 ```
 
 and override the parameters for the Traefik service
 
-```
+```xml
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="TraefikPkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
     <!-- Environment Overrides to allow overriding value for different environments -->
     <EnvironmentOverrides CodePackageRef="Code">
+      <EnvironmentVariable Name="UseManagedIdentity" Value="[TraefikUseManagedIdentityAuth]"/>
       <EnvironmentVariable Name="ApplicationInsightsKey" Value="[TraefikApplicationInsightsKey]"/>
       <EnvironmentVariable Name="CertsToConfigure" Value="[TraefikCertsToConfigure]"/>
       <EnvironmentVariable Name="KeyVaultUri" Value="[TraefikKeyVaultUri]"/>
@@ -106,15 +109,16 @@ and override the parameters for the Traefik service
 #### Configure per-environment parameters
 Once the Application Manifest is set to provide values to Traefik service based on the values provided to it, now we can use Application Parameters to override values for different environment.
 Refer to the [Sample Application Parameters](/Samples/Traefik/ApplicationParameters/Cloud.xml) to see how to configure values
-```
+```xml
 <Application Name="fabric:/Traefik" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Parameters>
     <Parameter Name="TraefikApplicationInsightsKey" Value="Application insights key"/>
     <Parameter Name="TraefikCertsToConfigure" Value="sslcert;KeyVault;SSLCert,clustercert;MyLocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663"/>
-    <Parameter Name="TraefikKeyVaultUri" Value="https://mysamplekeyvault.vault.azure.net/"/>
+    <Parameter Name="TraefikKeyVaultUri" Value="https://mysamplekeyvault.vault.azure.net/,https://mysamplekeyvault2.vault.azure.net/"/>
     <Parameter Name="TraefikKeyVaultClientId" Value="591073d7-7f30-4472-b856-e4ceccf9f764"/>
     <Parameter Name="TraefikKeyVaultClientSecret" Value=""/>
     <Parameter Name="TraefikKeyVaultClientCert" Value="7745662161272a590cf1d160e8777b03be3cca14"/>
+    <Parameter Name="TraefikUseManagedIdentityAuth" Value="false"/>
   </Parameters>
 </Application>
 ```
@@ -129,11 +133,12 @@ The parameters are as follows
      Identifier is Certificate thumbprint for LocalMachine and KeyVault secret name for KeyVault.
 
 *Note the certificates MUST be uploaded to keyvault using the Certificates option and not Secrets*
-- **TraefikKeyVaultUri** - Only required if you want to use KeyVault. This should be the KeyVault Uri. Start with https://
+- **TraefikKeyVaultUri** - Only required if you want to use KeyVault. This should be the comma separated KeyVault Uris. Start with https://. All KeyVaults must be allowed access from the type of authentication used (managed identity or service principal).
 - **TraefikKeyVaultClientId** - Only required if using KeyVault. An Application must be associated with KeyVault to access it. Refer [this](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-use-from-web-application#authenticate-with-a-certificate-instead-of-a-client-secret) to setup
 - **TraefikKeyVaultClientSecret** or **TraefikKeyVaultClientCert** - Only required if using KeyVault. Depending on what option you used in the keyvault application setup, you need to specify the client secret or certificate thumbprint for the application certificate. If the certificate is used, it must be installed on the machine. TraefikKeyVaultClientCert is the preferred option as it ensures no secrets are present in the configuration files.
 
 Deploy the Traefik service fabric application and pre-configurator should configure the Traefik instance before running.
+- **TraefikUseManagedIdentityAuth** - Allows using Managed Identity for authenticating with KeyVault(s). You can read more about Managed Identity [here](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview). To specify ClientId use the **TraefikKeyVaultClientId** parameter.
 
 ## Appendix 1 - Using HTTPS on Traefik
 The above process allows you to dump SSL certs onto the machine for Traefik to use. Refer to [sample toml file](/Samples/Traefik/ApplicationPackageRoot/TraefikPkg/Code/traefik.toml) on how to specify these. These allows Traefik to bind to 443 port.
@@ -177,3 +182,6 @@ although it will have the same result as
 ```clustercert;MyLocalMachine;0efeb8fa621a4a0be2378f2b60eb2142ce846663```. 
 
 This method is only supported for Local Machine certificates and not for KeyVault certificates.
+
+## Appendix 3 - Using Managed Identity instead of Service Principal
+[Managed Identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) allows developers to authenticate with resources in Azure without using any client secret or client certificate. To enable using Managed Identity set **TraefikUseManagedIdentityAuth** to `true`. If you are using [User Assigned Managed Identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-does-the-managed-identities-for-azure-resources-work) you can also specify the ClientId of the managed Identity using **TraefikKeyVaultClientId** option. You can get ClientId for the managed identity from the Azure Portal.
