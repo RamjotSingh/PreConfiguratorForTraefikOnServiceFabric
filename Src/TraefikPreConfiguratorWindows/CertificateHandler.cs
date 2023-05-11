@@ -25,12 +25,12 @@ namespace TraefikPreConfiguratorWindows
         /// <summary>
         /// Arguments to be used to extract .key out of .Pfx.
         /// </summary>
-        private const string PrivateKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -nocerts -nodes -out \"\"{1}\"\" -passin pass:{2}";
+        private const string PrivateKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -chain -nodes -out \"\"{1}\"\" -passin pass:{2}";
 
         /// <summary>
         /// Arguments to be used to extract .crt out of .Pfx.
         /// </summary>
-        private const string PublicKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -clcerts -nokeys -out \"\"{1}\"\" -passin pass:{2}";
+        private const string PublicKeyExportArguments = "pkcs12 -in \"\"{0}\"\" -clcerts -chain -nokeys -out \"\"{1}\"\" -passin pass:{2}";
 
         /// <summary>
         /// Processes the certificate management.
@@ -400,6 +400,8 @@ namespace TraefikPreConfiguratorWindows
                 pathToPfx,
                 Path.Combine(certDirectoryPath, certificateName + ".key"),
                 password);
+
+            Console.WriteLine(keyExtractionProcessArgs);
 
             Logger.LogVerbose(CallInfo.Site(), "Starting extraction of Private key for '{0}' using '{0}'", certificateName, opensslPath);
             int exportPrivateKeyExitCode = ExecuteOpensslProcess(opensslPath, keyExtractionProcessArgs);
